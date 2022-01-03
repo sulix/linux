@@ -71,6 +71,11 @@ static void snd_opl3_command(struct snd_opl3 * opl3, unsigned short cmd, unsigne
 	spin_unlock_irqrestore(&opl3->reg_lock, flags);
 }
 
+static unsigned char snd_opl3_status(struct snd_opl3 * opl3)
+{
+	return inb(opl3->l_port);
+}
+
 static int snd_opl3_detect(struct snd_opl3 * opl3)
 {
 	/*
@@ -90,7 +95,7 @@ static int snd_opl3_detect(struct snd_opl3 * opl3)
 	opl3->command(opl3, OPL3_LEFT | OPL3_REG_TIMER_CONTROL, OPL3_TIMER1_MASK | OPL3_TIMER2_MASK);
 	/* Reset the IRQ of the FM chip */
 	opl3->command(opl3, OPL3_LEFT | OPL3_REG_TIMER_CONTROL, OPL3_IRQ_RESET);
-	signature = stat1 = inb(opl3->l_port);	/* Status register */
+	signature = stat1 = opl3->status(opl3);	/* Status register */
 	if ((stat1 & 0xe0) != 0x00) {	/* Should be 0x00 */
 		snd_printd("OPL3: stat1 = 0x%x\n", stat1);
 		return -ENODEV;
@@ -102,7 +107,7 @@ static int snd_opl3_detect(struct snd_opl3 * opl3)
 	/* Now we have to delay at least 80us */
 	udelay(200);
 	/* Read status after timers have expired */
-	stat2 = inb(opl3->l_port);
+	stat2 = opl3->status(opl3);
 	/* Stop the timers */
 	opl3->command(opl3, OPL3_LEFT | OPL3_REG_TIMER_CONTROL, OPL3_TIMER1_MASK | OPL3_TIMER2_MASK);
 	/* Reset the IRQ of the FM chip */
@@ -288,7 +293,7 @@ void snd_opl3_interrupt(struct snd_hwdep * hw)
 		return;
 
 	opl3 = hw->private_data;
-	status = inb(opl3->l_port);
+	status = opl3->status(opl3);
 #if 0
 	snd_printk(KERN_DEBUG "AdLib IRQ status = 0x%x\n", status);
 #endif
@@ -420,6 +425,9 @@ int snd_opl3_create(struct snd_card *card,
 	}
 	opl3->l_port = l_port;
 	opl3->r_port = r_port;
+
+	/* all port-IO based hardware uses the same status function */
+	opl3->status = &snd_opl3_status;
 
 	switch (opl3->hardware) {
 	/* some hardware doesn't support timers */

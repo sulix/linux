@@ -288,6 +288,7 @@ struct snd_opl3 {
 	unsigned short hardware;
 	/* hardware access */
 	void (*command) (struct snd_opl3 * opl3, unsigned short cmd, unsigned char val);
+	unsigned char (*status) (struct snd_opl3 * opl3);
 	unsigned short timer_enable;
 	int seq_dev_num;	/* sequencer device number */
 	struct snd_timer *timer1;
