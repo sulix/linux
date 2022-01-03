@@ -15,3 +15,5 @@ obj-$(CONFIG_SND_OPL4_LIB) += snd-opl3-lib.o
 obj-$(CONFIG_SND_OPL3_LIB_SEQ) += snd-opl3-synth.o
 
 obj-$(CONFIG_SND_OPL3_KUNIT_TEST) += opl3_test.o
+
+obj-$(CONFIG_SND_OPL3LPT) += snd-opl3lpt.o

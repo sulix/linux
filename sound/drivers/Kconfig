@@ -238,4 +238,18 @@ config SND_AC97_POWER_SAVE_DEFAULT
 
 	  See SND_AC97_POWER_SAVE for more details.
 
+config SND_OPL3LPT
+	tristate "OPL2/3LPT Parallel Port Synth Driver"
+	depends on PARPORT
+	select SND_OPL3_LIB
+	help
+	  The OPL2LPT and OPL3LPT are parallel port soundcards which
+	  use the Yamaha OPL2 and OPL3 synth chips respectively. They
+	  provide compatibility with old Adlib / Sound Blaster FM synthesis.
+
+	  Say 'Y' to include support for this device.
+
+	  To compile this driver as a module, chose 'M' here: the module
+	  will be called snd-opl3lpt.
+
 endif	# SND_DRIVERS
