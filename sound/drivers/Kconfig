@@ -26,6 +26,19 @@ config SND_OPL4_LIB_SEQ
 	select SND_SEQ_MIDI_EMUL
 	select SND_SEQ_MIDI_EVENT
 
+config SND_OPL3_KUNIT_TEST
+	tristate "KUnit test for OPL3 synths" if !KUNIT_ALL_TESTS
+	depends on KUNIT
+	select SND_OPL3_LIB
+	default KUNIT_ALL_TESTS
+	help
+	  This builds the OPL3 library unit tests, which run on boot.
+
+	  For more information on KUnit and unit tests in general please refer
+	  to the KUnit documentation in Documentation/dev-tools/kunit/.
+
+	  If unsure, say N.
+
 config SND_VX_LIB
 	tristate
 	select FW_LOADER
