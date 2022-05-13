@@ -1,0 +1,64 @@
+on:
+  pull_request: {}
+  schedule:
+    - cron: '30 5,17 * * *'
+  push:
+
+jobs:
+  ci:
+    runs-on: ubuntu-20.04
+    container: ghcr.io/rust-for-linux/ci:Rust-1.60.0
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        arch: [um, x86_64, arm64]
+
+    steps:
+      # Setup: checkout
+      - uses: actions/checkout@v2
+
+      # Setup: Store matrix name
+      - run: echo 'MATRIX_NAME=kunit-${{ matrix.arch }}' >> $GITHUB_ENV
+
+      # Setup: Github cache
+      - uses: actions/cache@v2
+        with:
+          path: /root/.ccache
+          key: ${{ env.MATRIX_NAME }}-ccache-${{ github.run_id }}
+          restore-keys: |
+              ${{ env.MATRIX_NAME }}-ccache-
+
+      # Setup: Rust
+      #
+      # `rustc` via `rustup` needs to find the `settings.xml` file,
+      # but GitHub overrides `$HOME` for containers. Undo it, even
+      # if it makes GitHub show some Docker warnings.
+      # See https://github.com/actions/runner/issues/863.
+      #
+      # Note that the commands need to be in their own `run` to have
+      # `$HOME` visible for the second one.
+      - run: echo 'HOME=/root' >> $GITHUB_ENV
+      - run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - if: matrix.sysroot == 'custom'
+        run: |
+          echo 'RUSTC_SYSROOT=--sysroot=$HOME/sysroot' >> $GITHUB_ENV
+          echo "MAKE_SYSROOT=KRUSTFLAGS=--sysroot=$HOME/sysroot" >> $GITHUB_ENV
+
+      - if: matrix.arch == 'riscv'
+        run: |
+          cp .github/workflows/opensbi-riscv64-generic-fw_dynamic.bin .
+
+      # Setup: ccache
+      - run: |
+          echo '/usr/lib/ccache:$PATH' >> $GITHUB_PATH
+
+      # Setup: Check existing ccache
+      - run: ccache -s
+
+      # Run kunit_tool
+      - run: ./tools/testing/kunit/kunit.py run --arch ${{ matrix.arch }} --kconfig_add CONFIG_RUST=y --make_options LLVM=1 --raw_output=full
+
+      # View changes to ccache
+      - run: ccache -s
