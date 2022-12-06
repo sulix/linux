@@ -89,3 +89,57 @@ macro_rules! kunit_assert_eq {
         $crate::kunit_assert!($test, $left == $right);
     }};
 }
+
+#[macro_export]
+macro_rules! kunit_case {
+    ($name:ident) => {{
+        $crate::bindings::kunit_case {
+            run_case: Some($name),
+            name: c_str!(core::stringify!($name)).as_char_ptr(),
+            // Not a parameterised test.
+            generate_params: None,
+            // Private fields, all null.
+            status: kunit_status_KUNIT_SUCCESS,
+            log: core::ptr::null_mut(),
+        }
+    }};
+}
+
+/* We need this to NULL-terminate the list of test cases. */
+#[used]
+pub static mut kunit_null_test_case : bindings::kunit_case = bindings::kunit_case {
+    run_case: None,
+    name: core::ptr::null_mut(),
+    generate_params: None,
+    // Internal only
+    status: bindings::kunit_status_KUNIT_SUCCESS,
+    log: core::ptr::null_mut(),
+};
+
+
+#[macro_export]
+macro_rules! kunit_test_suite {
+    ($name:ident, suite_init $suite_init:ident, suite_exit $suite_exit:ident, init $init:ident, exit $exit:ident, $($test_cases:ident),+) => {
+        static mut testsuite : $crate::bindings::kunit_suite = unsafe { $crate::bindings::kunit_suite {
+            name: c_str!(core::stringify!($name)).as_char_ptr(),
+            suite_init: $suite_init,
+            suite_exit: $suite_exit,
+            init: $init,
+            exit: $exit,
+            test_cases: unsafe {  static mut testcases : &mut[$crate::bindings::kunit_case] = &mut[ $($test_cases,)+ $crate::kunit::kunit_null_test_case ]; testcases.as_mut_ptr() },
+            status_comment: [0; 256usize],
+            debugfs: core::ptr::null_mut(),
+            log: core::ptr::null_mut(),
+            suite_init_err: 0,
+        }};
+
+        #[used]
+        #[link_section = ".kunit_test_suites"]
+        static mut test_suite_entry : *const kernel::bindings::kunit_suite = unsafe { &testsuite };
+    };
+
+    ($name:ident, $($test_cases:ident),+) => {
+        $crate::kunit_test_suite!{$name, suite_init None, suite_exit None, init None, exit None $(,$test_cases)+}
+    }
+
+}

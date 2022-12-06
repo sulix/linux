@@ -150,7 +150,7 @@ static struct kunit_suite *alloc_fake_suite(struct kunit *test,
 
 	/* We normally never expect to allocate suites, hence the non-const cast. */
 	suite = kunit_kzalloc(test, sizeof(*suite), GFP_KERNEL);
-	strncpy((char *)suite->name, suite_name, sizeof(suite->name) - 1);
+	suite->name = suite_name;
 	suite->test_cases = test_cases;
 
 	return suite;

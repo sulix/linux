@@ -163,4 +163,12 @@ config SAMPLE_RUST_SELFTESTS
 
 	  If unsure, say N.
 
+config SAMPLE_RUST_KUNIT
+	tristate "KUnit test"
+	depends on KUNIT
+	default KUNIT_ALL_TESTS
+	help
+	  This option builds a sample KUnit test written in Rust.
+
+
 endif # SAMPLES_RUST

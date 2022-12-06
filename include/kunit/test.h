@@ -168,7 +168,7 @@ static inline char *kunit_status_to_ok_not_ok(enum kunit_status status)
  * to run it.
  */
 struct kunit_suite {
-	const char name[256];
+	const char *name;
 	int (*suite_init)(struct kunit_suite *suite);
 	void (*suite_exit)(struct kunit_suite *suite);
 	int (*init)(struct kunit *test);
